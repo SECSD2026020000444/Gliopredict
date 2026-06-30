@@ -8,7 +8,7 @@
     <style>
         :root {
             --blue: #2563EB; --blue-dk: #1E3A8A; --sky: #38BDF8; 
-            --ink: #0F1B2D; --slate: #5B6B82; --mist: #F4F8FC; --amber: #E08A00;
+            --ink: #0F1B2D; --slate: #5B6B82; --mist: #F4F8FC; 
         }
         body { font-family: sans-serif; background-color: var(--mist); color: var(--ink); margin: 0; padding: 2rem; line-height: 1.5; }
         .container { max-width: 1100px; margin: 0 auto; }
@@ -18,7 +18,7 @@
         .card { background: white; border: 1px solid #E3EBF5; border-radius: 16px; padding: 16px 18px; box-shadow: 0 2px 8px rgba(37,99,235,0.06); margin-bottom: 10px; }
         .metric-num { font-size: 26px; font-weight: 800; color: var(--blue); font-variant-numeric: tabular-nums; line-height: 1.1; }
         .metric-label { font-size: 11px; color: var(--slate); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; margin-top: 2px; }
-        .metric-sub { font-size: 12px; color: var(--slate); margin-top: 3px; }
+        .metric-sub { font-size: 11.5px; color: var(--slate); margin-top: 3px; line-height: 1.4; }
         
         .hero { background: linear-gradient(135deg, var(--blue), var(--sky)); border-radius: 20px; padding: 26px 30px; color: white; margin-bottom: 18px; }
         .hero h1 { color: white; font-size: 30px; margin: 0 0 6px 0; font-weight: 800; }
@@ -28,7 +28,6 @@
         
         .grid-2 { display: grid; grid-template-columns: 1.3fr 1fr; gap: 15px; }
         .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
-        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
         
         .btn-sample { background: white; border: 1px solid #E3EBF5; padding: 12px; border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.2s; font-weight: 600;}
         .btn-sample:hover { border-color: var(--blue); background: #EAF2FF; }
@@ -48,6 +47,10 @@
         .interpret-box h4 { margin: 0 0 10px 0; color: var(--blue-dk); }
         .interpret-box ul { margin: 0; padding-left: 18px; }
         .interpret-box li { margin-bottom: 6px; }
+
+        .surv-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        .surv-table th, .surv-table td { border-bottom: 1px solid #E3EBF5; padding: 10px; text-align: left; }
+        .surv-table th { background-color: #F4F8FC; font-weight: bold; color: var(--slate); }
     </style>
 </head>
 <body>
@@ -81,9 +84,17 @@
                 <div><label class="main-label">Tinggi (cm)</label><input type="number" id="height" value="165.0"></div>
             </div>
             
-            <label class="main-label" style="margin-top:10px;">Status Performa WHO (0-5)</label><input type="number" id="who" value="1" min="0" max="5">
+            <label class="main-label" style="margin-top:10px;">Status Performa WHO</label>
+            <select id="who">
+                <option value="0">0 - Aktif penuh, tanpa pembatasan</option>
+                <option value="1" selected>1 - Ada pembatasan fisik berat, mampu kerja ringan</option>
+                <option value="2">2 - Mampu merawat diri, tidak dapat bekerja</option>
+                <option value="3">3 - Terbatas di tempat tidur/kursi (>50% waktu)</option>
+            </select>
             
-            <label class="main-label" style="margin-top:10px;">Dosis Rencana Radioterapi (Gy)</label><input type="number" id="dose" value="60">
+            <label class="main-label" style="margin-top:10px;">Dosis Rencana Radioterapi (Gy)</label>
+            <input type="number" id="dose" value="60">
+            <div class="metric-sub" style="margin-bottom:10px;">*Total dosis radioterapi fraksinasi standar (Protokol Stupp) umumnya berkisar 50-60 Gy (1.8-2.0 Gy per fraksi).</div>
 
             <button class="btn-calc" id="btn-hitung" onclick="eksekusiAI()">Jalankan Analisis</button>
         </div>
@@ -103,33 +114,49 @@
                 <div id="plot-2d" style="display:flex; background:transparent; border-radius:12px; height:320px; flex-direction:row; align-items:center; justify-content:space-evenly; padding:10px; gap: 10px;">
                     <div style="text-align:center;"><div style="font-size:11px; font-weight:bold; color:var(--slate); margin-bottom:5px;">Aksial (Atas-Bawah)</div><canvas id="canvas-ax" width="160" height="160" style="background:#000; border-radius:6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></canvas></div>
                     <div style="text-align:center;"><div style="font-size:11px; font-weight:bold; color:var(--slate); margin-bottom:5px;">Koronal (Depan-Belakang)</div><canvas id="canvas-cor" width="160" height="160" style="background:#000; border-radius:6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></canvas></div>
-                    <div style="text-align:center;"><div style="font-size:11px; font-weight:bold; color:var(--slate); margin-bottom:5px;">Sagital (Samping Kiri-Kanan)</div><canvas id="canvas-sag" width="160" height="160" style="background:#000; border-radius:6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></canvas></div>
+                    <div style="text-align:center;"><div style="font-size:11px; font-weight:bold; color:var(--slate); margin-bottom:5px;">Sagital (Kiri-Kanan)</div><canvas id="canvas-sag" width="160" height="160" style="background:#000; border-radius:6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></canvas></div>
                 </div>
                 
                 <button class="btn-download" onclick="unduhBerkasGTV()">Unduh Berkas GTV Prediksi (.nii.gz)</button>
             </div>
 
-            <div class="grid-4" id="cards-container">
-                <div class="card"><div class="metric-num" id="lbl-volpred">- cc</div><div class="metric-label">Volume prediksi (AI)</div></div>
-                <div class="card" id="card-gt"><div class="metric-num" id="lbl-volgt">- cc</div><div class="metric-label">Volume acuan ahli</div></div>
-                <div class="card" id="card-dice"><div class="metric-num" id="lbl-dice">-</div><div class="metric-label">Dice Score</div></div>
-                <div class="card" id="card-hd"><div class="metric-num" id="lbl-hd">- mm</div><div class="metric-label">HD95</div></div>
+            <div class="grid-2" style="grid-template-columns: 1fr;">
+                <div class="card"><div class="metric-num" id="lbl-volpred">- cc</div><div class="metric-label">Volume Prediksi Tumor (AI)</div></div>
             </div>
 
-            <div id="plot-survival" style="width:100%; height:330px; background:white; border:1px solid #E3EBF5; border-radius:12px; padding:10px; margin-top:20px;"></div>
+            <div class="card" style="padding: 20px;">
+                <div id="plot-survival" style="width:100%; height:330px;"></div>
+                
+                <table class="surv-table">
+                    <thead>
+                        <tr>
+                            <th>Waktu Evaluasi</th>
+                            <th>Peluang Harapan Hidup</th>
+                            <th>Keterangan Klinis</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Minggu 10</td><td style="font-weight:bold; color:var(--blue);" id="surv-10">-</td><td>Evaluasi Awal Pasca-Terapi</td></tr>
+                        <tr><td>Minggu 20</td><td style="font-weight:bold; color:var(--blue);" id="surv-20">-</td><td>Paruh Tahun Pertama</td></tr>
+                        <tr><td>Minggu 50</td><td style="font-weight:bold; color:var(--blue);" id="surv-50">-</td><td>Batas Ambang 1 Tahun</td></tr>
+                        <tr><td>Minggu 100</td><td style="font-weight:bold; color:var(--blue);" id="surv-100">-</td><td>Batas Ambang 2 Tahun</td></tr>
+                        <tr><td>Minggu 150</td><td style="font-weight:bold; color:var(--blue);" id="surv-150">-</td><td>Evaluasi Jangka Panjang</td></tr>
+                        <tr><td>Minggu 200</td><td style="font-weight:bold; color:var(--blue);" id="surv-200">-</td><td>Batas Ambang 4 Tahun</td></tr>
+                    </tbody>
+                </table>
+            </div>
             
-            <div class="grid-2" style="gap:10px; margin-top:15px; grid-template-columns: 1fr 1fr;">
+            <div class="grid-2" style="gap:10px; margin-top:15px; grid-template-columns: 1fr;">
                 <div class="card"><div class="metric-num" id="out-med">- minggu</div><div class="metric-label">Estimasi Median Survival Time</div><div class="metric-sub">Dihitung sejak diagnosis pasca-operasi</div></div>
-                <div class="card"><div class="metric-num" id="out-prob">-%</div><div class="metric-label">Peluang Bertahan 1 Tahun</div><div class="metric-sub">Dihitung sejak diagnosis pasca-operasi</div></div>
             </div>
 
             <div class="interpret-box">
                 <h4>Faktor Klinis Signifikan (p &lt; 0.05) pada Model Cox PH</h4>
                 <ul>
                     <li><b>Volume Tumor (GTV):</b> Setiap kenaikan 1 cc berasosiasi meningkatkan risiko kematian 1% (HR 1.01). Volume prediksi AI untuk pasien ini adalah <b id="text-vol">- cc</b>.</li>
-                    <li><b>Status Performa WHO:</b> Pasien dengan status lemah memiliki risiko 1.95x lipat lebih tinggi dibanding pasien mandiri (p=0.003). Pasien ini memiliki status WHO <b id="text-who">-</b>.</li>
-                    <li><b>Dosis Radioterapi:</b> Setiap 1 Gy dosis terapi berperan sebagai proteksi yang menurunkan risiko sebesar 3% (HR 0.97, p=0.005). Pasien ini direncanakan menerima <b id="text-dose">- Gy</b>.</li>
-                    <li><b>Interaksi Klinis:</b> Efektivitas proteksi radiasi terbukti secara statistik menurun hingga 3% jika kondisi fisik pasien (WHO) sudah terlanjur memburuk (p=0.015).</li>
+                    <li><b>Status Performa WHO:</b> Pasien dengan kondisi fisik lemah memiliki risiko 1.95x lipat lebih tinggi dibanding pasien mandiri (p=0.003). Pasien ini memiliki status WHO Kategori <b id="text-who">-</b>.</li>
+                    <li><b>Dosis Radioterapi:</b> Setiap 1 Gy dosis terapi berperan sebagai proteksi yang menurunkan risiko sebesar 3% (HR 0.97, p=0.005). Pasien ini direncanakan menerima dosis <b id="text-dose">- Gy</b>.</li>
+                    <li><b>Interaksi Klinis:</b> Efektivitas proteksi radiasi terbukti secara statistik menurun hingga 3% jika kondisi fisik umum pasien (WHO) memburuk (p=0.015).</li>
                 </ul>
             </div>
         </div>
@@ -141,12 +168,6 @@ let modeTerpilih = null;
 let pidTerpilih = null;
 let cacheGtvBlobUrl = null;
 let cx=0, cy=0, cz=0; 
-
-const metrikSampel = {
-    '150_t0_t1gd_img_prep': { gt: 83.0, dice: 0.890, hd: 2.1 },
-    '248_t0_t1gd_img_prep': { gt: 15.3, dice: 0.891, hd: 1.5 },
-    '252_t0_t1gd_img_prep': { gt: 34.5, dice: 0.836, hd: 3.4 }
-};
 
 function pilihJalur(mode, pid) {
     modeTerpilih = mode;
@@ -175,7 +196,7 @@ function ubahTab(tab) {
 
 function resetKamera() {
     Plotly.relayout('plot-3d', {
-        'scene.camera': { center: {x: cx, y: cy, z: cz}, eye: {x: cx+1.2, y: cy+1.2, z: cz+0.8} }
+        'scene.camera': { center: {x: cx, y: cy, z: cz}, eye: {x: cx+1.0, y: cy+1.0, z: cz+0.6} }
     });
 }
 
@@ -202,6 +223,19 @@ function drawSlice(canvasId, imgData, mskData) {
     ctx.putImageData(ctxImg, 0, 0);
 }
 
+function hitungProbabilitas(t_arr, s_arr, target_week) {
+    for(let i=0; i<t_arr.length; i++) {
+        if(t_arr[i] >= target_week) {
+            if(i === 0) return s_arr[0];
+            let t0 = t_arr[i-1], t1 = t_arr[i];
+            let s0 = s_arr[i-1], s1 = s_arr[i];
+            let val = s0 + (s1 - s0) * ((target_week - t0) / (t1 - t0));
+            return val;
+        }
+    }
+    return s_arr[s_arr.length - 1];
+}
+
 async function eksekusiAI() {
     if (!modeTerpilih) { alert("Pilih data sampel atau unggah MRI terlebih dahulu!"); return; }
     const btn = document.getElementById('btn-hitung');
@@ -223,24 +257,11 @@ async function eksekusiAI() {
         API_URL = HF_SPACE_URL + "/predict_sample";
         formData.append("patient_id", pidTerpilih);
         document.getElementById('lbl-pid').innerText = "Pasien " + pidTerpilih.split('_')[0];
-        document.getElementById('lbl-volgt').innerText = metrikSampel[pidTerpilih].gt.toFixed(1) + " cc";
-        document.getElementById('lbl-dice').innerText = metrikSampel[pidTerpilih].dice.toFixed(3);
-        document.getElementById('lbl-hd').innerText = metrikSampel[pidTerpilih].hd.toFixed(1) + " mm";
-        
-        document.getElementById('card-gt').style.display = 'block';
-        document.getElementById('card-dice').style.display = 'block';
-        document.getElementById('card-hd').style.display = 'block';
-        document.getElementById('cards-container').style.gridTemplateColumns = "repeat(4, 1fr)";
     } else {
         const fileInput = document.getElementById('mri-upload');
         if(fileInput.files.length === 0) { alert("File kosong!"); btn.disabled = false; btn.innerText = "Jalankan Analisis"; return; }
         formData.append("file", fileInput.files[0]);
         document.getElementById('lbl-pid').innerText = "Unggahan Mandiri";
-        
-        document.getElementById('card-gt').style.display = 'none';
-        document.getElementById('card-dice').style.display = 'none';
-        document.getElementById('card-hd').style.display = 'none';
-        document.getElementById('cards-container').style.gridTemplateColumns = "1fr";
     }
 
     try {
@@ -251,7 +272,6 @@ async function eksekusiAI() {
         document.getElementById('section-hasil').style.display = 'block';
         document.getElementById('lbl-volpred').innerText = data.volume_cc.toFixed(1) + " cc";
         
-        // Memasukkan input dinamis ke dalam box interpretasi
         document.getElementById('text-vol').innerText = data.volume_cc.toFixed(1);
         document.getElementById('text-who').innerText = who;
         document.getElementById('text-dose').innerText = dose;
@@ -270,12 +290,12 @@ async function eksekusiAI() {
         cy = data.tumor_y.length ? data.tumor_y[Math.floor(data.tumor_y.length/2)] / max_val : 0.5;
         cz = data.tumor_z.length ? data.tumor_z[Math.floor(data.tumor_z.length/2)] / max_val : 0.5;
 
-        // VISUALISASI 3D SOLID MESH (Mulus dan Padat spt Daging)
+        // Visualisasi Mesh3D 
         Plotly.newPlot('plot-3d', [
-            { x: data.otak_x, y: data.otak_y, z: data.otak_z, type: 'mesh3d', alphahull: 4, opacity: 0.03, color: '#94A3B8', name: 'Batas Otak (Transparan)', hoverinfo: 'none' },
+            { x: data.otak_x, y: data.otak_y, z: data.otak_z, type: 'mesh3d', alphahull: 5, opacity: 0.05, color: '#94A3B8', name: 'Batas Otak (Transparan)', hoverinfo: 'none' },
             { x: data.tumor_x, y: data.tumor_y, z: data.tumor_z, type: 'mesh3d', alphahull: 2, opacity: 1.0, color: '#DC2626', name: 'Solid GTV (Massa Tumor)', flatshading: true }
         ], { 
-            scene: { xaxis: {visible:false}, yaxis: {visible:false}, zaxis: {visible:false}, camera: { center: {x: cx, y: cy, z: cz}, eye: {x: cx+1.2, y: cy+1.2, z: cz+0.8} } }, 
+            scene: { xaxis: {visible:false}, yaxis: {visible:false}, zaxis: {visible:false}, camera: { center: {x: cx, y: cy, z: cz}, eye: {x: cx+1.0, y: cy+1.0, z: cz+0.6} } }, 
             margin: { l:0, r:0, b:0, t:0 }, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)' 
         });
 
@@ -285,10 +305,15 @@ async function eksekusiAI() {
 
         Plotly.newPlot('plot-survival', [{
             x: data.curve_t, y: data.curve_s, mode: 'lines', line: { color: '#2563EB', width: 3.5, shape: 'hv' }, fill: 'tozeroy', fillcolor: 'rgba(37,99,235,0.08)'
-        }], { title: 'Kurva Harapan Hidup Individual (Cox PH)', margin: { l: 40, r: 20, b: 40, t: 40 }, xaxis: { title: 'Waktu (minggu)' }, yaxis: { title: 'Peluang Harapan Hidup', tickformat: '.0%' }, plot_bgcolor: "white", paper_bgcolor: "white" });
+        }], { title: 'Kurva Harapan Hidup Individual', margin: { l: 40, r: 20, b: 40, t: 40 }, xaxis: { title: 'Waktu (minggu)' }, yaxis: { title: 'Peluang', tickformat: '.0%' }, plot_bgcolor: "white", paper_bgcolor: "white" });
 
         document.getElementById('out-med').innerText = data.median_weeks ? Math.round(data.median_weeks) + " minggu" : "> masa amatan";
-        document.getElementById('out-prob').innerText = Math.round(data.prob_1_year * 100) + "%";
+        
+        let targetWeeks = [10, 20, 50, 100, 150, 200];
+        targetWeeks.forEach(w => {
+            let prob = hitungProbabilitas(data.curve_t, data.curve_s, w);
+            document.getElementById('surv-' + w).innerText = (prob * 100).toFixed(1) + " %";
+        });
 
         document.getElementById('section-hasil').scrollIntoView({ behavior: 'smooth' });
     } catch(e) {
